@@ -25,32 +25,13 @@ pipeline {
             }
         }
 
-        stage('Start MySQL') {
-            steps {
-                echo 'Démarrage de MySQL pour les tests...'
-                sh '''
-                    docker rm -f mysql-test || true
-                    docker run -d \
-                        --name mysql-test \
-                        -e MYSQL_ROOT_PASSWORD=root \
-                        -e MYSQL_DATABASE=arctic \
-                        -e MYSQL_USER=user \
-                        -e MYSQL_PASSWORD=password \
-                        -p 3307:3306 \
-                        mysql:8
-                    echo "Attente démarrage MySQL..."
-                    sleep 20
-                '''
-            }
-        }
-
         stage('Tests') {
             steps {
                 echo 'Exécution des tests...'
                 dir('backend') {
                     sh '''
                         mvn test \
-                          -Dspring.datasource.url=jdbc:mysql://localhost:3307/arctic \
+                          -Dspring.datasource.url=jdbc:mysql://localhost:3306/test_db?createDatabaseIfNotExist=true \
                           -Dspring.datasource.username=root \
                           -Dspring.datasource.password=root
                     '''
@@ -98,10 +79,6 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Nettoyage MySQL de test...'
-            sh 'docker rm -f mysql-test || true'
-        }
         success {
             echo 'Pipeline terminé avec succès !'
         }
